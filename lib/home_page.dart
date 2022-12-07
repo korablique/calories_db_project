@@ -75,6 +75,11 @@ class _HomePageState extends State<HomePage>
                   Text('fats: ${e.fats}, '),
                   Text('carbs: ${e.carbs}, '),
                   Text('calories: ${e.calories}'),
+                  IconButton(
+                      onPressed: () {
+                        _deleteFoodstuff(e);
+                      },
+                      icon: const Icon(Icons.delete))
                 ]))
             .toList(),
       )),
@@ -90,5 +95,10 @@ class _HomePageState extends State<HomePage>
       context,
       MaterialPageRoute(builder: (context) => const AddFoodstuffPage()),
     );
+  }
+
+  void _deleteFoodstuff(Foodstuff e) async {
+    final storage = FoodstuffsStorage.instance();
+    await storage.deleteFoodstuff(e.id);
   }
 }
