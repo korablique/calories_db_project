@@ -2,11 +2,13 @@ import 'package:calories_db_project/foodstuff.dart';
 import 'package:calories_db_project/psql_connection_holder.dart';
 
 class FoodstuffsStorage {
+  final _listeners = <FoodstuffsStorageListener>[];
+
   static FoodstuffsStorage? _instance;
 
   FoodstuffsStorage._();
 
-  static Future<FoodstuffsStorage> instance() async {
+  static FoodstuffsStorage instance() {
     _instance ??= FoodstuffsStorage._();
     return _instance!;
   }
@@ -19,19 +21,20 @@ class FoodstuffsStorage {
     final result = <Foodstuff>[];
     for (final row in rows) {
       result.add(Foodstuff(
-          row[0] as int,
-          row[1] as String,
-          row[2] as String,
-          double.parse(row[3] as String),
-          double.parse(row[4] as String),
-          double.parse(row[5] as String),
-          double.parse(row[6] as String),
+        row[0] as int,
+        row[1] as String,
+        row[2] as String,
+        double.parse(row[3] as String),
+        double.parse(row[4] as String),
+        double.parse(row[5] as String),
+        double.parse(row[6] as String),
       ));
     }
     return result;
   }
 
-  Future<void> addFoodstuff(String name, double protein, double fats, double carbs) async {
+  Future<void> addFoodstuff(
+      String name, double protein, double fats, double carbs) async {
     final holder = await PsqlConnectionHolder.instance();
     final connection = holder.connection;
     await connection.query(
@@ -41,18 +44,35 @@ class FoodstuffsStorage {
           "protein": protein,
           "fats": fats,
           "carbs": carbs,
-        }
-    );
+        });
+
+    for (var l in _listeners.toList()) {
+      l.onFoodstuffsStorageUpdated();
+    }
   }
 
   Future<void> deleteFoodstuff(int id) async {
     final holder = await PsqlConnectionHolder.instance();
     final connection = holder.connection;
-    await connection.query(
-        'SELECT f_delete_foodstuff(@id)',
-        substitutionValues: {
-          "id": id,
-        }
-    );
+    await connection
+        .query('SELECT f_delete_foodstuff(@id)', substitutionValues: {
+      "id": id,
+    });
+
+    for (var l in _listeners.toList()) {
+      l.onFoodstuffsStorageUpdated();
+    }
   }
+
+  void addListener(FoodstuffsStorageListener listener) {
+    _listeners.add(listener);
+  }
+
+  void removeListener(FoodstuffsStorageListener listener) {
+    _listeners.remove(listener);
+  }
+}
+
+abstract class FoodstuffsStorageListener {
+  void onFoodstuffsStorageUpdated();
 }

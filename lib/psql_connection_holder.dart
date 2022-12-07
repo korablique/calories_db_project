@@ -5,7 +5,8 @@ class PsqlConnectionHolder {
 
   PsqlConnectionHolder._();
 
-  final connection = PostgreSQLConnection("localhost", 5432, "postgres", username: "postgres", password: "qweexrty");
+  final connection = PostgreSQLConnection("localhost", 5432, "postgres",
+      username: "postgres", password: "qweexrty");
 
   static Future<PsqlConnectionHolder> instance() async {
     if (_instance == null) {

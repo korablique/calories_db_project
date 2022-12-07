@@ -7,5 +7,6 @@ class Foodstuff {
   final double carbs;
   final double calories;
 
-  Foodstuff(this.id, this.name, this.nameLowerCase, this.protein, this.fats, this.carbs, this.calories);
+  Foodstuff(this.id, this.name, this.nameLowerCase, this.protein, this.fats,
+      this.carbs, this.calories);
 }
