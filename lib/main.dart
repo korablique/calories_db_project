@@ -1,12 +1,34 @@
 import 'package:calories_db_project/home_page.dart';
+import 'package:calories_db_project/login_page.dart';
+import 'package:calories_db_project/psql_connection_holder.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> implements PsqlConnectionHolderListener {
+  var _psqlInited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _psqlInited = PsqlConnectionHolder.inited();
+    PsqlConnectionHolder.addListener(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    PsqlConnectionHolder.removeListener(this);
+  }
 
   // This widget is the root of your application.
   @override
@@ -16,7 +38,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(title: 'My calories diary'),
+      home: _psqlInited
+          ? const HomePage(title: 'My calories diary')
+          : const LoginPage(),
     );
+  }
+
+  @override
+  void onDbConnectionInited() {
+    setState(() {
+      _psqlInited = PsqlConnectionHolder.inited();
+    });
   }
 }

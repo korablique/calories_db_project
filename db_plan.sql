@@ -1,3 +1,30 @@
+-- Подключаем расширение dblink (однажды подключил - используется всегда)
+CREATE EXTENSION dblink;
+
+
+-- функция создания БД с заданым именем
+CREATE OR REPLACE FUNCTION f_create_calories_db(dbname text)
+  RETURNS void AS
+$func$
+BEGIN
+-- проверка на существование БД с таким же именем
+IF EXISTS (SELECT 1 FROM pg_database WHERE datname = dbname) THEN
+   -- Возвращаем сообщение (не ошибку)
+   RAISE NOTICE 'Database already exists'; 
+ELSE
+   -- выполняем SQL запрос на создание БД. оператор || - конкатенация
+   -- current_database() - возврашает название БД в которой сейчас выполняется транзакция
+   -- принцип работы dblink_exec: подключается к указанной бд(в примере - текущая), и выполняет запрос, 
+   -- переданный вторым аргументом.
+   -- для доп.информации можно добавить hostaddr=127.0.0.1 port=5432 dbname=mydb user=postgres password=mypasswd
+   PERFORM dblink_exec('dbname=' || current_database()   -- current db
+                     , 'CREATE DATABASE ' || quote_ident(dbname) || ' WITH TEMPLATE calories_db_template OWNER postgres;');
+END IF;
+
+END
+$func$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION f_init_tables()
 RETURNS void AS 
 $func$
@@ -95,6 +122,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE FUNCTION f_get_all_foodstuffs()
 RETURNS TABLE (
 	id INTEGER,
@@ -109,3 +137,49 @@ BEGIN
 	return QUERY SELECT * FROM foodstuff;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION f_am_I_admin()
+RETURNS BOOL AS $$
+DECLARE
+    c INTEGER;
+BEGIN
+	c := count(*) FROM pg_roles WHERE rolname = CURRENT_USER AND rolsuper = true;
+	IF c = 1 THEN
+		RETURN TRUE;
+	ELSE
+		RETURN FALSE;
+	END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+--creating roles and users--
+CREATE ROLE user_role;
+GRANT ALL PRIVILEGES ON TABLE foodstuff TO user_role;
+GRANT ALL PRIVILEGES ON TABLE history TO user_role;
+GRANT ALL PRIVILEGES ON TABLE exercise TO user_role;
+ALTER ROLE user_role WITH LOGIN;
+
+CREATE ROLE glasha login password 'pass';
+CREATE ROLE petya login password 'pass';
+GRANT user_role TO glasha;
+GRANT user_role TO petya;
+
+
+
+GRANT ALL PRIVILEGES ON TABLE foodstuff TO glasha;
+GRANT ALL PRIVILEGES ON TABLE history TO glasha;
+GRANT ALL PRIVILEGES ON TABLE exercise TO glasha;
+GRANT ALL PRIVILEGES ON TABLE foodstuff TO petya;
+GRANT ALL PRIVILEGES ON TABLE history TO petya;
+GRANT ALL PRIVILEGES ON TABLE exercise TO petya;
+
+GRANT ALL PRIVILEGES ON TABLE foodstuff_id_seq TO glasha;
+GRANT ALL PRIVILEGES ON TABLE history_entry_id_seq TO glasha;
+GRANT ALL PRIVILEGES ON TABLE exercise_id_seq TO glasha;
+
+GRANT ALL PRIVILEGES ON TABLE foodstuff_id_seq TO petya;
+GRANT ALL PRIVILEGES ON TABLE history_entry_id_seq TO petya;
+GRANT ALL PRIVILEGES ON TABLE exercise_id_seq TO petya;
+
