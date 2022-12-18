@@ -64,6 +64,25 @@ class FoodstuffsStorage {
     }
   }
 
+  Future<void> updateFoodstuff(
+      int id, String name, double protein, double fats, double carbs) async {
+    final holder = await PsqlConnectionHolder.instance();
+    final connection = holder.connection;
+    await connection.query(
+        'SELECT f_update_foodstuff(@id, @new_name, @new_protein, @new_fats, @new_carbs)',
+        substitutionValues: {
+          "id": id,
+          "new_name": name,
+          "new_protein": protein,
+          "new_fats": fats,
+          "new_carbs": carbs,
+        });
+
+    for (var l in _listeners.toList()) {
+      l.onFoodstuffsStorageUpdated();
+    }
+  }
+
   void addListener(FoodstuffsStorageListener listener) {
     _listeners.add(listener);
   }

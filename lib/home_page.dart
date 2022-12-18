@@ -3,6 +3,8 @@ import 'package:calories_db_project/foodstuff.dart';
 import 'package:calories_db_project/foodstuffs_storage.dart';
 import 'package:flutter/material.dart';
 
+import 'edit_foodstuff_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
 
@@ -77,9 +79,14 @@ class _HomePageState extends State<HomePage>
                   Text('calories: ${e.calories}'),
                   IconButton(
                       onPressed: () {
+                        _editFoodstuff(e);
+                      },
+                      icon: const Icon(Icons.edit)),
+                  IconButton(
+                      onPressed: () {
                         _deleteFoodstuff(e);
                       },
-                      icon: const Icon(Icons.delete))
+                      icon: const Icon(Icons.delete)),
                 ]))
             .toList(),
       )),
@@ -94,6 +101,14 @@ class _HomePageState extends State<HomePage>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddFoodstuffPage()),
+    );
+  }
+
+  void _editFoodstuff(Foodstuff oldFoodstuff) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => EditFoodstuffPage(oldFoodstuff: oldFoodstuff)),
     );
   }
 

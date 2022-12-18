@@ -29,40 +29,39 @@ CREATE OR REPLACE FUNCTION f_init_tables()
 RETURNS void AS 
 $func$
 BEGIN
+	CREATE TABLE IF NOT EXISTS user_parameters (
+		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL
+	);
 
-CREATE TABLE IF NOT EXISTS user_parameters (
-	id SERIAL PRIMARY KEY,
-	name TEXT NOT NULL
-);
+	CREATE TABLE IF NOT EXISTS foodstuff (
+		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL,
+		lower_case_name TEXT,  
+		protein NUMERIC(4, 1) CHECK (protein BETWEEN 0 and 100),  --max value is 100 -> 3 digits + 1 digit after the decimal point--
+		fats NUMERIC(4, 1) CHECK (fats BETWEEN 0 and 100),
+		carbs NUMERIC(4, 1) CHECK (carbs BETWEEN 0 and 100),
+		calories NUMERIC(4, 1)  --max value is 900--
+	);
 
-CREATE TABLE IF NOT EXISTS foodstuff (
-	id SERIAL PRIMARY KEY,
-	name TEXT NOT NULL,
-	lower_case_name TEXT,  
-	protein NUMERIC(4, 1) CHECK (protein BETWEEN 0 and 100),  --max value is 100 -> 3 digits + 1 digit after the decimal point--
-	fats NUMERIC(4, 1) CHECK (fats BETWEEN 0 and 100),
-	carbs NUMERIC(4, 1) CHECK (carbs BETWEEN 0 and 100),
-	calories NUMERIC(4, 1)  --max value is 900--
-);
+	CREATE TABLE IF NOT EXISTS history (
+		entry_id SERIAL PRIMARY KEY,
+		user_id INTEGER REFERENCES user_parameters,
+		date DATE NOT NULL DEFAULT CURRENT_DATE,
+		foodstuff_id INTEGER REFERENCES foodstuff, 
+		foodstuff_weight INTEGER CHECK (foodstuff_weight > 0)
+	);
 
-CREATE TABLE IF NOT EXISTS history (
-	entry_id SERIAL PRIMARY KEY,
-	user_id INTEGER REFERENCES user_parameters,
-	date DATE NOT NULL DEFAULT CURRENT_DATE,
-	foodstuff_id INTEGER REFERENCES foodstuff, 
-	foodstuff_weight INTEGER CHECK (foodstuff_weight > 0)
-);
+	CREATE TABLE IF NOT EXISTS exercise (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER REFERENCES user_parameters,
+		date DATE NOT NULL DEFAULT CURRENT_DATE,
+		calories NUMERIC(5, 1) CHECK (calories >= 0)  --max value ~ 9000
+	);
 
-CREATE TABLE IF NOT EXISTS exercise (
-	id SERIAL PRIMARY KEY,
-	user_id INTEGER REFERENCES user_parameters,
-	date DATE NOT NULL DEFAULT CURRENT_DATE,
-	calories NUMERIC(5, 1) CHECK (calories >= 0)  --max value ~ 9000
-);
+	CREATE INDEX IF NOT EXISTS foodstuff_lowercase_idx ON foodstuff (lower_case_name);
 
-CREATE INDEX IF NOT EXISTS foodstuff_lowercase_idx ON foodstuff (lower_case_name);
-
-CREATE INDEX IF NOT EXISTS foodstuff_calories_idx ON foodstuff (calories);
+	CREATE INDEX IF NOT EXISTS foodstuff_calories_idx ON foodstuff (calories);
 END;
 $func$ LANGUAGE plpgsql;
 
@@ -72,33 +71,31 @@ CREATE OR REPLACE FUNCTION f_init_triggers()
 RETURNS void AS
 $func$
 BEGIN
+	CREATE OR REPLACE FUNCTION f_calculate_calories()
+	RETURNS trigger AS $$
+	BEGIN
+		NEW.calories := NEW.protein * 4 + NEW.fats * 9 + NEW.carbs * 4;
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION f_calculate_calories()
-RETURNS trigger AS $$
-BEGIN
-	NEW.calories := NEW.protein * 4 + NEW.fats * 9 + NEW.carbs * 4;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+	CREATE OR REPLACE FUNCTION f_foodstuff_name_to_lowercase()
+	RETURNS trigger AS $$
+	BEGIN
+		NEW.lower_case_name := lower(NEW.name);
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION f_foodstuff_name_to_lowercase()
-RETURNS trigger AS $$
-BEGIN
-	NEW.lower_case_name := lower(NEW.name);
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+	CREATE OR REPLACE TRIGGER calculate_calories
+		BEFORE INSERT OR UPDATE ON foodstuff
+		FOR EACH ROW
+		EXECUTE FUNCTION f_calculate_calories();
 
-CREATE OR REPLACE TRIGGER calculate_calories
-	BEFORE INSERT OR UPDATE ON foodstuff
-	FOR EACH ROW
-	EXECUTE FUNCTION f_calculate_calories();
-
-CREATE OR REPLACE TRIGGER foodstuff_name_to_lowercase
-	BEFORE INSERT OR UPDATE ON foodstuff
-	FOR EACH ROW
-	EXECUTE FUNCTION f_foodstuff_name_to_lowercase();
-
+	CREATE OR REPLACE TRIGGER foodstuff_name_to_lowercase
+		BEFORE INSERT OR UPDATE ON foodstuff
+		FOR EACH ROW
+		EXECUTE FUNCTION f_foodstuff_name_to_lowercase();
 END;
 $func$ LANGUAGE plpgsql;
 
@@ -166,11 +163,10 @@ CREATE ROLE petya login password 'pass';
 GRANT user_role TO glasha;
 GRANT user_role TO petya;
 
-
-
 GRANT ALL PRIVILEGES ON TABLE foodstuff TO glasha;
 GRANT ALL PRIVILEGES ON TABLE history TO glasha;
 GRANT ALL PRIVILEGES ON TABLE exercise TO glasha;
+
 GRANT ALL PRIVILEGES ON TABLE foodstuff TO petya;
 GRANT ALL PRIVILEGES ON TABLE history TO petya;
 GRANT ALL PRIVILEGES ON TABLE exercise TO petya;
@@ -183,3 +179,16 @@ GRANT ALL PRIVILEGES ON TABLE foodstuff_id_seq TO petya;
 GRANT ALL PRIVILEGES ON TABLE history_entry_id_seq TO petya;
 GRANT ALL PRIVILEGES ON TABLE exercise_id_seq TO petya;
 
+
+--update row with foodstuff--
+CREATE OR REPLACE FUNCTION f_update_foodstuff(
+	foodstuff_id foodstuff.id%TYPE,
+	new_name foodstuff.name%TYPE,
+	new_protein foodstuff.protein%TYPE,
+	new_fats foodstuff.fats%TYPE,
+	new_carbs foodstuff.carbs%TYPE)
+RETURNS void AS $$
+BEGIN
+	UPDATE foodstuff SET (name, protein, fats, carbs) = (new_name, new_protein, new_fats, new_carbs) WHERE foodstuff.id = foodstuff_id;
+END;
+$$ LANGUAGE plpgsql;
