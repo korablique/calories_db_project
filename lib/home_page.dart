@@ -27,7 +27,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     implements FoodstuffsStorageListener {
   final _foodstuffs = <Foodstuff>[];
-  bool _amIAdmin = false;
+  var _amIAdmin = false;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -79,11 +80,27 @@ class _HomePageState extends State<HomePage>
       ),
       body: Center(
           child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _amIAdmin
               ? TextButton(
                   onPressed: _deleteDatabase, child: Text('Delete database'))
               : const SizedBox.shrink(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                  width: 300, child: TextField(controller: _searchController)),
+              IconButton(
+                  onPressed: () {
+                    _searchFoodstuffs();
+                  },
+                  icon: const Icon(Icons.search)),
+            ],
+          ),
+          const SizedBox(height: 24),
           ListView(
             shrinkWrap: true,
             children: _foodstuffs
@@ -134,6 +151,16 @@ class _HomePageState extends State<HomePage>
   void _deleteFoodstuff(Foodstuff e) async {
     final storage = FoodstuffsStorage.instance();
     await storage.deleteFoodstuff(e.id);
+  }
+
+  void _searchFoodstuffs() async {
+    final storage = FoodstuffsStorage.instance();
+    final foundFoodstuffs =
+        await storage.searchFoodstuffs(_searchController.text);
+    setState(() {
+      _foodstuffs.clear();
+      _foodstuffs.addAll(foundFoodstuffs);
+    });
   }
 
   void _deleteDatabase() async {

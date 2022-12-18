@@ -202,3 +202,21 @@ BEGIN
 	UPDATE foodstuff SET (name, protein, fats, carbs) = (new_name, new_protein, new_fats, new_carbs) WHERE foodstuff.id = foodstuff_id;
 END;
 $$ LANGUAGE plpgsql;
+
+
+--search for foodstuff--
+CREATE OR REPLACE FUNCTION f_search_foodstuffs(name_substr foodstuff.name%TYPE)
+RETURNS TABLE (
+	id INTEGER,
+	name TEXT,
+	lower_case_name TEXT,  
+	protein NUMERIC,
+	fats NUMERIC,
+	carbs NUMERIC,
+	calories NUMERIC
+) AS $$
+BEGIN
+	return QUERY SELECT * FROM foodstuff WHERE foodstuff.lower_case_name LIKE '%' || lower(name_substr) || '%';
+END;
+$$ LANGUAGE plpgsql;
+

@@ -33,6 +33,30 @@ class FoodstuffsStorage {
     return result;
   }
 
+  Future<List<Foodstuff>> searchFoodstuffs(String nameSubstr) async {
+    final holder = await PsqlConnectionHolder.instance();
+    final connection = holder.connection;
+    final rows = await connection.query(
+        'SELECT * FROM f_search_foodstuffs(@name_substr)',
+        substitutionValues: {
+          'name_substr': nameSubstr,
+        });
+
+    final result = <Foodstuff>[];
+    for (final row in rows) {
+      result.add(Foodstuff(
+        row[0] as int,
+        row[1] as String,
+        row[2] as String,
+        double.parse(row[3] as String),
+        double.parse(row[4] as String),
+        double.parse(row[5] as String),
+        double.parse(row[6] as String),
+      ));
+    }
+    return result;
+  }
+
   Future<void> addFoodstuff(
       String name, double protein, double fats, double carbs) async {
     final holder = await PsqlConnectionHolder.instance();
