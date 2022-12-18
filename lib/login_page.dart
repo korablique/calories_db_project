@@ -45,7 +45,12 @@ class _LoginPageState extends State<LoginPage> {
                   Text('Password: '),
                   SizedBox(
                       width: 300,
-                      child: TextField(controller: _passwordController)),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        enableSuggestions: false,
+                        autocorrect: false,
+                      )),
                 ]),
           ])),
       floatingActionButton: FloatingActionButton(

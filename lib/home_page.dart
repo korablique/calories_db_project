@@ -1,6 +1,7 @@
 import 'package:calories_db_project/add_foodstuff_page.dart';
 import 'package:calories_db_project/foodstuff.dart';
 import 'package:calories_db_project/foodstuffs_storage.dart';
+import 'package:calories_db_project/psql_connection_holder.dart';
 import 'package:flutter/material.dart';
 
 import 'edit_foodstuff_page.dart';
@@ -26,6 +27,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     implements FoodstuffsStorageListener {
   final _foodstuffs = <Foodstuff>[];
+  bool _amIAdmin = false;
 
   @override
   void initState() {
@@ -41,6 +43,12 @@ class _HomePageState extends State<HomePage>
   }
 
   void _initAsync() async {
+    final holder = await PsqlConnectionHolder.instance();
+    final amIAdmin = await holder.amIAdmin();
+    setState(() {
+      _amIAdmin = amIAdmin;
+    });
+
     _reloadFoodstuffs();
     final storage = FoodstuffsStorage.instance();
     storage.addListener(this);
@@ -65,30 +73,41 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          IconButton(onPressed: _logOut, icon: const Icon(Icons.logout)),
+        ],
       ),
       body: Center(
-          child: ListView(
-        shrinkWrap: true,
-        children: _foodstuffs
-            .map((e) =>
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('Name: ${e.name}, '),
-                  Text('protein: ${e.protein}, '),
-                  Text('fats: ${e.fats}, '),
-                  Text('carbs: ${e.carbs}, '),
-                  Text('calories: ${e.calories}'),
-                  IconButton(
-                      onPressed: () {
-                        _editFoodstuff(e);
-                      },
-                      icon: const Icon(Icons.edit)),
-                  IconButton(
-                      onPressed: () {
-                        _deleteFoodstuff(e);
-                      },
-                      icon: const Icon(Icons.delete)),
-                ]))
-            .toList(),
+          child: Column(
+        children: [
+          _amIAdmin
+              ? TextButton(
+                  onPressed: _deleteDatabase, child: Text('Delete database'))
+              : const SizedBox.shrink(),
+          ListView(
+            shrinkWrap: true,
+            children: _foodstuffs
+                .map((e) =>
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text('Name: ${e.name}, '),
+                      Text('protein: ${e.protein}, '),
+                      Text('fats: ${e.fats}, '),
+                      Text('carbs: ${e.carbs}, '),
+                      Text('calories: ${e.calories}'),
+                      IconButton(
+                          onPressed: () {
+                            _editFoodstuff(e);
+                          },
+                          icon: const Icon(Icons.edit)),
+                      IconButton(
+                          onPressed: () {
+                            _deleteFoodstuff(e);
+                          },
+                          icon: const Icon(Icons.delete)),
+                    ]))
+                .toList(),
+          )
+        ],
       )),
       floatingActionButton: FloatingActionButton(
         onPressed: _addFoodstuff,
@@ -115,5 +134,13 @@ class _HomePageState extends State<HomePage>
   void _deleteFoodstuff(Foodstuff e) async {
     final storage = FoodstuffsStorage.instance();
     await storage.deleteFoodstuff(e.id);
+  }
+
+  void _deleteDatabase() async {
+    await PsqlConnectionHolder.deleteDatabase();
+  }
+
+  void _logOut() async {
+    await PsqlConnectionHolder.logOut();
   }
 }

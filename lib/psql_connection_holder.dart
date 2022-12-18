@@ -68,6 +68,40 @@ class PsqlConnectionHolder {
   static void removeListener(PsqlConnectionHolderListener listener) {
     _listeners.remove(listener);
   }
+
+  static Future<void> logOut() async {
+    await _instance?.connection.close();
+    _instance = null;
+
+    _login = null;
+    _password = null;
+    for (var listener in _listeners) {
+      listener.onDbConnectionInited();
+    }
+  }
+
+  static Future<void> deleteDatabase() async {
+    await _instance?.connection.close();
+    _instance = null;
+
+    // connection to the 'postgres' database
+    var connection = PostgreSQLConnection("localhost", 5432, _PSQL_DB_NAME,
+        username: _login, password: _password);
+    await connection.open();
+    await connection.query("SELECT f_drop_db('$_CALORIES_DB_NAME');");
+    await connection.close();
+
+    _login = null;
+    _password = null;
+    for (var listener in _listeners) {
+      listener.onDbConnectionInited();
+    }
+  }
+
+  Future<bool> amIAdmin() async {
+    final result = await connection.query("SELECT f_am_I_admin();");
+    return result[0][0];
+  }
 }
 
 abstract class PsqlConnectionHolderListener {
