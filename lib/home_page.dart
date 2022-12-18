@@ -28,11 +28,17 @@ class _HomePageState extends State<HomePage>
     implements FoodstuffsStorageListener {
   final _foodstuffs = <Foodstuff>[];
   var _amIAdmin = false;
+  var _searchQueryEmpty = true;
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQueryEmpty = _searchController.text.isEmpty;
+      });
+    });
     _initAsync();
   }
 
@@ -98,9 +104,20 @@ class _HomePageState extends State<HomePage>
                     _searchFoodstuffs();
                   },
                   icon: const Icon(Icons.search)),
+              !_searchQueryEmpty
+                  ? IconButton(
+                      onPressed: () {
+                        _deleteFoodstuffsBySubstring();
+                      },
+                      icon: const Icon(Icons.delete))
+                  : const SizedBox.shrink(),
             ],
           ),
           const SizedBox(height: 24),
+          TextButton(
+              onPressed: _deleteAllFoodstuffs,
+              child: const Text('Delete all foodstuffs',
+                  style: TextStyle(color: Colors.redAccent))),
           ListView(
             shrinkWrap: true,
             children: _foodstuffs
@@ -153,6 +170,50 @@ class _HomePageState extends State<HomePage>
     await storage.deleteFoodstuff(e.id);
   }
 
+  void _deleteFoodstuffsBySubstring() async {
+    final storage = FoodstuffsStorage.instance();
+    await storage.deleteFoodstuffsBySubstr(_searchController.text);
+    _searchController.clear();
+    _reloadFoodstuffs();
+    _showMessage('Foodstuffs were deleted!');
+  }
+
+  void _deleteAllFoodstuffs() async {
+    // create dialog buttons
+    Widget cancelButton = TextButton(
+      child: Text("Cancel"),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+    Widget continueButton = TextButton(
+      child: Text("Continue"),
+      onPressed: () async {
+        final storage = FoodstuffsStorage.instance();
+        await storage.deleteAllFoodstuffs();
+        _showMessage('All foodstuffs were deleted!');
+        Navigator.pop(context);
+      },
+    );
+
+    // create dialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Deletion"),
+      content: Text("Are you sure you want to delete all foodstuffs?"),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
   void _searchFoodstuffs() async {
     final storage = FoodstuffsStorage.instance();
     final foundFoodstuffs =
@@ -169,5 +230,12 @@ class _HomePageState extends State<HomePage>
 
   void _logOut() async {
     await PsqlConnectionHolder.logOut();
+  }
+
+  void _showMessage(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

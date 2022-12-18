@@ -220,3 +220,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+--delete all foodstuffs by substring--
+CREATE OR REPLACE FUNCTION f_delete_foodstuffs_by_substr(name_substr foodstuff.name%TYPE)
+RETURNS void AS $$
+BEGIN
+	DELETE FROM foodstuff WHERE foodstuff.lower_case_name LIKE '%' || lower(name_substr) || '%';
+END;
+$$ LANGUAGE plpgsql;
+
+
+--delete all foodstuffs--
+CREATE OR REPLACE FUNCTION f_delete_all_foodstuffs()
+RETURNS void AS $$
+BEGIN
+	DELETE FROM foodstuff;
+END;
+$$ LANGUAGE plpgsql;

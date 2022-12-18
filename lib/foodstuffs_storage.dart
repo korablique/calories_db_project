@@ -88,6 +88,29 @@ class FoodstuffsStorage {
     }
   }
 
+  Future<void> deleteFoodstuffsBySubstr(String substr) async {
+    final holder = await PsqlConnectionHolder.instance();
+    final connection = holder.connection;
+    await connection.query('SELECT f_delete_foodstuffs_by_substr(@substr)',
+        substitutionValues: {
+          "substr": substr,
+        });
+
+    for (var l in _listeners.toList()) {
+      l.onFoodstuffsStorageUpdated();
+    }
+  }
+
+  Future<void> deleteAllFoodstuffs() async {
+    final holder = await PsqlConnectionHolder.instance();
+    final connection = holder.connection;
+    await connection.query('SELECT f_delete_all_foodstuffs()');
+
+    for (var l in _listeners.toList()) {
+      l.onFoodstuffsStorageUpdated();
+    }
+  }
+
   Future<void> updateFoodstuff(
       int id, String name, double protein, double fats, double carbs) async {
     final holder = await PsqlConnectionHolder.instance();
