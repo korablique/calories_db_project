@@ -32,12 +32,10 @@ class HistoryStorage {
     return result;
   }
 
-  Future<void> addHistoryEntry(
-      int foodstuffId, int foodstuffWeight) async {
+  Future<void> addHistoryEntry(int foodstuffId, int foodstuffWeight) async {
     final holder = await PsqlConnectionHolder.instance();
     final connection = holder.connection;
-    await connection.query(
-        'SELECT f_add_history_entry(@foodstuffId, @weight)',
+    await connection.query('SELECT f_add_history_entry(@foodstuffId, @weight)',
         substitutionValues: {
           "foodstuffId": foodstuffId,
           "weight": foodstuffWeight,

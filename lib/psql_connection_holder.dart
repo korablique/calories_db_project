@@ -84,7 +84,7 @@ class PsqlConnectionHolder {
     await _instance?.connection.close();
     _instance = null;
 
-    // connection to the 'postgres' database
+    // Connection to the 'postgres' database
     var connection = PostgreSQLConnection("localhost", 5432, _PSQL_DB_NAME,
         username: _login, password: _password);
     await connection.open();

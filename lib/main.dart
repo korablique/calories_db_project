@@ -39,9 +39,7 @@ class _MyAppState extends State<MyApp> implements PsqlConnectionHolderListener {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: _psqlInited
-          ? const TabsPage()
-          : const LoginPage(),
+      home: _psqlInited ? const TabsPage() : const LoginPage(),
     );
   }
 

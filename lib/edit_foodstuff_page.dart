@@ -29,7 +29,7 @@ class _EditFoodstuffPageState extends State<EditFoodstuffPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit foodstuff'),
+        title: const Text('Edit foodstuff'),
       ),
       body: Center(
           child: Column(
@@ -40,7 +40,7 @@ class _EditFoodstuffPageState extends State<EditFoodstuffPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Name: '),
+                  const Text('Name: '),
                   SizedBox(
                       width: 300,
                       child: TextField(controller: _nameController)),
@@ -49,7 +49,7 @@ class _EditFoodstuffPageState extends State<EditFoodstuffPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Protein: '),
+                  const Text('Protein: '),
                   SizedBox(
                       width: 300,
                       child: TextField(controller: _proteinController)),
@@ -58,7 +58,7 @@ class _EditFoodstuffPageState extends State<EditFoodstuffPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Fats: '),
+                  const Text('Fats: '),
                   SizedBox(
                       width: 300,
                       child: TextField(controller: _fatsController)),
@@ -67,7 +67,7 @@ class _EditFoodstuffPageState extends State<EditFoodstuffPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Carbs: '),
+                  const Text('Carbs: '),
                   SizedBox(
                       width: 300,
                       child: TextField(controller: _carbsController)),

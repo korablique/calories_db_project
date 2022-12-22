@@ -13,7 +13,8 @@ class HistoryPage extends StatefulWidget {
   State<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> implements HistoryStorageListener, FoodstuffsStorageListener {
+class _HistoryPageState extends State<HistoryPage>
+    implements HistoryStorageListener, FoodstuffsStorageListener {
   final _historyEntries = <HistoryEntry>[];
   final _foodstuffsMap = <int, Foodstuff>{};
   final _dateFormatter = DateFormat('yyyy-MM-dd');
@@ -29,7 +30,9 @@ class _HistoryPageState extends State<HistoryPage> implements HistoryStorageList
   void _reloadHistory() async {
     final dbHistory = await HistoryStorage.instance().getMyHistory();
     final dbFoodstuffs = await FoodstuffsStorage.instance().getAllFoodstuffs();
-    final dbFoodstuffsMap = { for (var foodstuff in dbFoodstuffs) foodstuff.id: foodstuff };
+    final dbFoodstuffsMap = {
+      for (var foodstuff in dbFoodstuffs) foodstuff.id: foodstuff
+    };
     setState(() {
       _historyEntries.clear();
       _historyEntries.addAll(dbHistory);
@@ -51,14 +54,14 @@ class _HistoryPageState extends State<HistoryPage> implements HistoryStorageList
     return Scaffold(
       body: Center(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 24),
-              ListView(
-                shrinkWrap: true,
-                children: _historyEntries
-                    .map((e) =>
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 24),
+          ListView(
+            shrinkWrap: true,
+            children: _historyEntries
+                .map((e) =>
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text('Name: ${_foodstuffsMap[e.foodstuffId]!.name}, '),
                       Text('weight: ${e.foodstuffWeight}, '),
@@ -69,10 +72,10 @@ class _HistoryPageState extends State<HistoryPage> implements HistoryStorageList
                           },
                           icon: const Icon(Icons.delete)),
                     ]))
-                    .toList(),
-              )
-            ],
-          )),
+                .toList(),
+          )
+        ],
+      )),
       floatingActionButton: FloatingActionButton(
         onPressed: _addHistoryEntry,
         child: const Icon(Icons.add),

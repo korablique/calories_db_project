@@ -4,6 +4,6 @@ class HistoryEntry {
   final DateTime date;
   final int foodstuffId;
   final int foodstuffWeight;
-  HistoryEntry(this.id, this.userId, this.date, this.foodstuffId,
-      this.foodstuffWeight);
+  HistoryEntry(
+      this.id, this.userId, this.date, this.foodstuffId, this.foodstuffWeight);
 }

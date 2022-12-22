@@ -70,14 +70,19 @@ class _SelectFoodstuffPageState extends State<SelectFoodstuffPage>
           ListView(
             shrinkWrap: true,
             children: _foodstuffs
-                .map((e) =>
-                    InkWell(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text('Name: ${e.name}, '),
-                      Text('protein: ${e.protein}, '),
-                      Text('fats: ${e.fats}, '),
-                      Text('carbs: ${e.carbs}, '),
-                      Text('calories: ${e.calories}'),
-                    ]), onTap: () { _foodstuffSelected(e); }))
+                .map((e) => InkWell(
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Name: ${e.name}, '),
+                          Text('protein: ${e.protein}, '),
+                          Text('fats: ${e.fats}, '),
+                          Text('carbs: ${e.carbs}, '),
+                          Text('calories: ${e.calories}'),
+                        ]),
+                    onTap: () {
+                      _foodstuffSelected(e);
+                    }))
                 .toList(),
           )
         ],
