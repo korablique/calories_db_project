@@ -1,6 +1,7 @@
 import 'package:calories_db_project/home_page.dart';
 import 'package:calories_db_project/login_page.dart';
 import 'package:calories_db_project/psql_connection_holder.dart';
+import 'package:calories_db_project/tabs_page.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
@@ -39,7 +40,7 @@ class _MyAppState extends State<MyApp> implements PsqlConnectionHolderListener {
         primarySwatch: Colors.blue,
       ),
       home: _psqlInited
-          ? const HomePage(title: 'My calories diary')
+          ? const TabsPage()
           : const LoginPage(),
     );
   }

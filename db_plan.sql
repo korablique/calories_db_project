@@ -41,6 +41,7 @@ $func$
 BEGIN
 	CREATE TABLE IF NOT EXISTS user_parameters (
 		id SERIAL PRIMARY KEY,
+		pg_role_oid INTEGER,
 		name TEXT NOT NULL
 	);
 
@@ -54,8 +55,8 @@ BEGIN
 		calories NUMERIC(4, 1)  --max value is 900--
 	);
 
-	CREATE TABLE IF NOT EXISTS history (
-		entry_id SERIAL PRIMARY KEY,
+	CREATE TABLE IF NOT EXISTS history_entry (
+		id SERIAL PRIMARY KEY,
 		user_id INTEGER REFERENCES user_parameters,
 		date DATE NOT NULL DEFAULT CURRENT_DATE,
 		foodstuff_id INTEGER REFERENCES foodstuff, 
@@ -64,6 +65,7 @@ BEGIN
 
 	CREATE TABLE IF NOT EXISTS exercise (
 		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL,
 		user_id INTEGER REFERENCES user_parameters,
 		date DATE NOT NULL DEFAULT CURRENT_DATE,
 		calories NUMERIC(5, 1) CHECK (calories >= 0)  --max value ~ 9000
@@ -164,7 +166,7 @@ $$ LANGUAGE plpgsql;
 --creating roles and users--
 CREATE ROLE user_role;
 GRANT ALL PRIVILEGES ON TABLE foodstuff TO user_role;
-GRANT ALL PRIVILEGES ON TABLE history TO user_role;
+GRANT ALL PRIVILEGES ON TABLE history_entry TO user_role;
 GRANT ALL PRIVILEGES ON TABLE exercise TO user_role;
 ALTER ROLE user_role WITH LOGIN;
 
@@ -174,20 +176,28 @@ GRANT user_role TO glasha;
 GRANT user_role TO petya;
 
 GRANT ALL PRIVILEGES ON TABLE foodstuff TO glasha;
-GRANT ALL PRIVILEGES ON TABLE history TO glasha;
+GRANT ALL PRIVILEGES ON TABLE history_entry TO glasha;
 GRANT ALL PRIVILEGES ON TABLE exercise TO glasha;
+GRANT ALL PRIVILEGES ON TABLE user_parameters TO glasha;
 
 GRANT ALL PRIVILEGES ON TABLE foodstuff TO petya;
-GRANT ALL PRIVILEGES ON TABLE history TO petya;
+GRANT ALL PRIVILEGES ON TABLE history_entry TO petya;
 GRANT ALL PRIVILEGES ON TABLE exercise TO petya;
+GRANT ALL PRIVILEGES ON TABLE user_parameters TO petya;
 
 GRANT ALL PRIVILEGES ON TABLE foodstuff_id_seq TO glasha;
 GRANT ALL PRIVILEGES ON TABLE history_entry_id_seq TO glasha;
 GRANT ALL PRIVILEGES ON TABLE exercise_id_seq TO glasha;
+GRANT ALL PRIVILEGES ON TABLE user_parameters_id_seq TO glasha;
 
 GRANT ALL PRIVILEGES ON TABLE foodstuff_id_seq TO petya;
 GRANT ALL PRIVILEGES ON TABLE history_entry_id_seq TO petya;
 GRANT ALL PRIVILEGES ON TABLE exercise_id_seq TO petya;
+GRANT ALL PRIVILEGES ON TABLE user_parameters_id_seq TO petya;
+
+--add roles to user params table--
+INSERT INTO user_parameters (pg_role_oid, name) VALUES ((SELECT oid FROM pg_roles WHERE rolname='glasha'), 'glasha');
+INSERT INTO user_parameters (pg_role_oid, name) VALUES ((SELECT oid FROM pg_roles WHERE rolname='petya'), 'petya');
 
 
 --update row with foodstuff--
@@ -225,6 +235,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION f_delete_foodstuffs_by_substr(name_substr foodstuff.name%TYPE)
 RETURNS void AS $$
 BEGIN
+	--TODO: delete entries from history--
 	DELETE FROM foodstuff WHERE foodstuff.lower_case_name LIKE '%' || lower(name_substr) || '%';
 END;
 $$ LANGUAGE plpgsql;
@@ -234,6 +245,59 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION f_delete_all_foodstuffs()
 RETURNS void AS $$
 BEGIN
+	DELETE FROM history_entry;
 	DELETE FROM foodstuff;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION f_get_my_user_id()
+RETURNS INTEGER AS $$
+DECLARE
+    user_oid INTEGER;
+    u_id INTEGER;
+BEGIN
+	user_oid := (SELECT oid FROM pg_roles WHERE rolname = CURRENT_USER);
+	u_id := (SELECT id FROM user_parameters WHERE pg_role_oid = user_oid);
+	RETURN u_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+--history--
+CREATE OR REPLACE FUNCTION f_add_history_entry(f_id history_entry.foodstuff_id%TYPE, f_weight history_entry.foodstuff_weight%TYPE)
+RETURNS void AS $$
+BEGIN
+	INSERT INTO history_entry (user_id, foodstuff_id, foodstuff_weight) VALUES ((SELECT f_get_my_user_id()), f_id, f_weight);
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION f_get_my_history()
+RETURNS TABLE (
+	id INTEGER,
+	user_id INTEGER,
+	date DATE,
+	foodstuff_id INTEGER, 
+	foodstuff_weight INTEGER
+) AS $$
+BEGIN
+	RETURN QUERY SELECT * FROM history_entry WHERE history_entry.user_id = (SELECT f_get_my_user_id());
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION f_delete_history_entry(entry_id history_entry.id%TYPE)
+RETURNS void AS $$
+BEGIN
+	DELETE FROM history_entry WHERE history_entry.id = entry_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION f_delete_all_history()
+RETURNS void AS $$
+BEGIN
+	DELETE FROM history_entry WHERE history_entry.user_id = (SELECT f_get_my_user_id());
 END;
 $$ LANGUAGE plpgsql;

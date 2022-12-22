@@ -32,6 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   postgres: ^2.5.2
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:
